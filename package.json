@@ -1,14 +1,14 @@
 {
-  "name": "",
-  "version": "0.0.0",
+  "name": "utilities-node",
+  "version": "1.0.0",
   "description": "",
   "main": "build/index.js",
-  "types": "/build/index.d.ts",
+  "types": "build/index.d.ts",
   "jest": {
     "testEnvironment": "node"
   },
   "files": [
-    "build/src"
+    "build"
   ],
   "license": "Apache-2.0",
   "keywords": [],
