@@ -1,3 +1,5 @@
+import * as files from './files';
+
 export const dollarList = (start: number, length: number): string => {
   const r: string[] = [];
 
@@ -7,3 +9,5 @@ export const dollarList = (start: number, length: number): string => {
 
   return r.join(',');
 };
+
+export {files};
