@@ -1,25 +1,25 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.fileCount = exports.getPath = exports.createFolders = void 0;
+exports.next = exports.uniqueFolderList = exports.uniqueString = exports.nextFile = exports.createFolders = void 0;
 const fs_1 = require("fs");
-const folderLimit = 30;
-const folderNameLimit = 10;
-const folderDepthLimit = 6;
-const createFolders = (path, level = 1) => {
-    const folders = uniqueFolderList();
+const createFolders = (path, folderLimit = 30, folderNameLimit = 10, folderDepthLimit = 4, level = 1) => {
+    if (!(0, fs_1.existsSync)(path)) {
+        throw new Error(`Path ${path} does not exist.`);
+    }
+    const folders = uniqueFolderList(folderLimit, folderNameLimit);
     folders.forEach(f => {
         const newFolder = path + '/' + f;
         (0, fs_1.mkdirSync)(newFolder);
         if (level < folderDepthLimit) {
-            createFolders(newFolder);
+            createFolders(newFolder, folderLimit, folderNameLimit, folderDepthLimit, level + 1);
         }
     });
 };
 exports.createFolders = createFolders;
-const uniqueFolderList = () => {
+const uniqueFolderList = (folderLimit = 30, folderNameLimit = 10) => {
     const folders = [];
     for (let f = 0; f < folderLimit; f += 1) {
-        let folder = uniqueString();
+        let folder = uniqueString(folderNameLimit);
         while (folders.includes(folder)) {
             folder = uniqueString();
         }
@@ -27,7 +27,8 @@ const uniqueFolderList = () => {
     }
     return folders;
 };
-const uniqueString = () => {
+exports.uniqueFolderList = uniqueFolderList;
+const uniqueString = (folderNameLimit = 10) => {
     let str = '';
     const chars = 'abcdefghijklmnopqrstuvwxyz123456789'.split('');
     for (let i = 0; i < folderNameLimit; i += 1) {
@@ -35,17 +36,50 @@ const uniqueString = () => {
     }
     return str;
 };
-const getPath = (path, folderIds) => {
-    let fullPath = path;
-    for (let l = 0; l < folderDepthLimit; l += 1) {
-        const folders = (0, fs_1.readdirSync)(fullPath);
-        fullPath += '/' + folders[folderIds[l]];
+exports.uniqueString = uniqueString;
+const nextFile = (path, folderLimit = 30, folderNameLimit = 10, folderDepthLimit = 4) => {
+    if (!(0, fs_1.existsSync)(path)) {
+        throw new Error(`Path ${path} does not exist.`);
     }
-    return fullPath;
+    const nFile = next(path, folderLimit, folderNameLimit, folderDepthLimit);
+    if (nFile === null) {
+        throw new Error('Could not determin next file.');
+    }
+    return nFile;
 };
-exports.getPath = getPath;
-const fileCount = (path) => {
-    return (0, fs_1.readdirSync)(path).length;
+exports.nextFile = nextFile;
+const next = (path, folderLimit = 30, folderNameLimit = 10, folderDepthLimit = 4, level = 1) => {
+    if (!(0, fs_1.existsSync)(path)) {
+        throw new Error(`Path ${path} does not exist.`);
+    }
+    if ((0, fs_1.existsSync)(path + '/.isFull')) {
+        // no reason to dig deeper, this path is full
+        return null;
+    }
+    if (level > folderDepthLimit) {
+        if ((0, fs_1.readdirSync)(path).length < folderLimit) {
+            return path + '/' + uniqueString(folderNameLimit);
+        }
+        else {
+            return null;
+        }
+    }
+    else {
+        let n = null;
+        const files = (0, fs_1.readdirSync)(path);
+        for (let f = 0; f < files.length && n === null; f++) {
+            const file = path + '/' + files[f];
+            if (n === null && (0, fs_1.lstatSync)(file).isDirectory()) {
+                n = next(file, folderLimit, folderNameLimit, folderDepthLimit, level + 1);
+            }
+        }
+        if (n === null) {
+            // looks like this folder is full
+            // let's mark as full and never return
+            (0, fs_1.writeFileSync)(path + '/.isFull', '', 'utf-8');
+        }
+        return n;
+    }
 };
-exports.fileCount = fileCount;
+exports.next = next;
 //# sourceMappingURL=files.js.map
